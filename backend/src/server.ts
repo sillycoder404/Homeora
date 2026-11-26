@@ -42,6 +42,14 @@ const generalLimiter = rateLimit({
 });
 
 app.use('/api', generalLimiter);
+app.use('/api', async (_req, _res, next) => {
+  try {
+    await connectDatabase();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -72,7 +80,15 @@ async function start(): Promise<void> {
   app.listen(port, () => console.log(`API running on http://localhost:${port}`));
 }
 
-start().catch((error) => {
-  console.error('Failed to start server:', error);
-  process.exit(1);
-});
+if (!process.env.VERCEL) {
+  start().catch((error) => {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  });
+} else {
+  connectDatabase().catch((error) => {
+    console.error('Failed to connect database:', error);
+  });
+}
+
+export default app;

@@ -14,7 +14,5 @@ function sanitize(value: unknown): unknown {
 
 export function sanitizeInput(req: Request, _res: Response, next: NextFunction): void {
   req.body = sanitize(req.body);
-  req.query = sanitize(req.query) as typeof req.query;
-  req.params = sanitize(req.params) as typeof req.params;
   next();
 }

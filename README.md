@@ -2,6 +2,13 @@
 
 React, TypeScript and Express real estate platform for the Indian market.
 
+## Live Deployment
+
+- Frontend: https://frontend-dun-eight-jadzmobqmu.vercel.app
+- Backend API: https://backend-kappa-nine-4k9ht1p9at.vercel.app
+- Health check: https://backend-kappa-nine-4k9ht1p9at.vercel.app/api/health
+- Properties API: https://backend-kappa-nine-4k9ht1p9at.vercel.app/api/properties
+
 ## Structure
 
 - `frontend/` - Vite, React, TypeScript and Tailwind UI
