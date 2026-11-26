@@ -70,8 +70,8 @@ export default function Listings() {
         <PageMeta title="Properties for Sale" description="Browse and filter houses, apartments, villas, plots and commercial properties across India." path="/properties" />
         <section className="listings-hero relative isolate overflow-hidden rounded-[2rem] px-6 py-9 text-white shadow-2xl shadow-slate-950/15 sm:px-10 sm:py-12">
           <div className="relative z-10 max-w-3xl">
-            <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200/25 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200 backdrop-blur">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+            <p className="inline-flex items-center gap-2 rounded-full border border-amber-100/25 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-100 backdrop-blur">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
               Discover properties
             </p>
             <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">Find a place<br className="hidden sm:block" /> you'll love</h1>

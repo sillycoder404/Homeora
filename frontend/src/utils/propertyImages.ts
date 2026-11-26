@@ -9,8 +9,56 @@ const fallbackImageIds = [
   'photo-1600585154526-990dced4db0d',
 ];
 
+export interface PropertyGalleryImage {
+  url: string;
+  fileId: string;
+  isRepresentative: boolean;
+}
+
+function getImageUrl(photoId: string): string {
+  return `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=1200&q=82`;
+}
+
 export function getPropertyFallbackImage(city: string, propertyId = ''): string {
   const key = `${city}${propertyId}`;
   const index = [...key].reduce((sum, character) => sum + character.charCodeAt(0), 0) % fallbackImageIds.length;
-  return `https://images.unsplash.com/${fallbackImageIds[index]}?auto=format&fit=crop&w=1200&q=82`;
+  return getImageUrl(fallbackImageIds[index]);
+}
+
+export function getPropertyGalleryImages(
+  city: string,
+  propertyId: string,
+  images: ReadonlyArray<{ url: string; fileId: string }> = [],
+  count = 4,
+): PropertyGalleryImage[] {
+  const gallery: PropertyGalleryImage[] = [];
+  const usedUrls = new Set<string>();
+  for (const image of images) {
+    if (gallery.length >= count) break;
+    if (!image.url || usedUrls.has(image.url)) continue;
+
+    gallery.push({
+      ...image,
+      isRepresentative: image.fileId.startsWith('seed-'),
+    });
+    usedUrls.add(image.url);
+  }
+
+  const key = `${city}${propertyId}`;
+  const startIndex = [...key].reduce((sum, character) => sum + character.charCodeAt(0), 0) % fallbackImageIds.length;
+
+  for (let offset = 0; gallery.length < count && offset < fallbackImageIds.length; offset += 1) {
+    const photoId = fallbackImageIds[(startIndex + offset) % fallbackImageIds.length];
+    const url = getImageUrl(photoId);
+    if (usedUrls.has(url)) continue;
+
+    gallery.push({
+      url,
+      fileId: `gallery-${propertyId}-${photoId}`,
+      isRepresentative: true,
+    });
+    usedUrls.add(url);
+  }
+
+  return gallery;
 }

@@ -6,7 +6,7 @@ import type { ApiResponse } from '../services/api';
 import type { Property } from './Listings';
 import { useAuth } from '../context/useAuth';
 import PageMeta from '../components/PageMeta';
-import { getPropertyFallbackImage } from '../utils/propertyImages';
+import { getPropertyFallbackImage, getPropertyGalleryImages } from '../utils/propertyImages';
 
 export default function PropertyDetails() {
   const { id } = useParams();
@@ -29,6 +29,8 @@ export default function PropertyDetails() {
 
   if (error) return <main className="p-8 text-center text-red-700">{error}</main>;
   if (!property) return <main className="p-8 text-center">Loading property...</main>;
+
+  const galleryImages = getPropertyGalleryImages(property.location.city, property._id, property.images);
 
   async function submitBooking(event: FormEvent) {
     event.preventDefault();
@@ -54,38 +56,78 @@ export default function PropertyDetails() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl p-4 md:p-6">
+    <main className="min-h-screen bg-[#f6f5ef]">
+      <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-10">
       <PageMeta
         title={property.title}
         description={`${property.bedrooms} BHK property in ${property.location.locality}, ${property.location.city} for ₹${property.price.toLocaleString('en-IN')}`}
         path={`/properties/${property._id}`}
-        image={property.images[0]?.url}
+        image={galleryImages[0]?.url}
       />
-      <div className="grid gap-3 md:grid-cols-2">
-        {(property.images.length ? property.images : [{ url: getPropertyFallbackImage(property.location.city, property._id), fileId: 'fallback' }]).map((image) => (
-          <img
+      <div role="group" aria-label={`${galleryImages.length} property photos`} className="grid grid-cols-2 gap-3 overflow-hidden rounded-[1.75rem] md:grid-cols-[1.7fr_1fr_1fr] md:grid-rows-[220px_220px]">
+        {galleryImages.map((image, index) => (
+          <figure
             key={image.fileId}
-            src={image.url}
-            alt={property.title}
-            onError={(event) => {
-              event.currentTarget.onerror = null;
-              event.currentTarget.src = getPropertyFallbackImage(property.location.city);
-            }}
-            className="h-72 w-full rounded-xl object-cover"
-          />
+            className={`group relative min-h-40 overflow-hidden rounded-2xl bg-stone-200 sm:min-h-56 md:min-h-0 ${
+              index === 0
+                ? 'col-span-2 min-h-[18rem] md:col-span-1 md:row-span-2'
+                : index === 3
+                  ? 'col-span-2 md:col-span-2'
+                  : 'col-span-1'
+            }`}
+          >
+            <img
+              src={image.url}
+              alt={`${property.title} - photo ${index + 1}`}
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = getPropertyFallbackImage(property.location.city, `${property._id}-${index + 1}`);
+              }}
+              className={`h-40 w-full object-cover transition duration-500 group-hover:scale-[1.03] sm:h-56 md:h-full ${
+                index === 0 ? 'min-h-[18rem] md:min-h-0' : ''
+              }`}
+            />
+            {image.isRepresentative && (
+              <figcaption className="absolute bottom-3 left-3 rounded-full bg-black/55 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+                Representative photo
+              </figcaption>
+            )}
+          </figure>
         ))}
       </div>
-      <div className="mt-6 rounded-xl bg-white p-6 shadow">
-        <p className="text-3xl font-bold text-brand-700">₹{property.price.toLocaleString('en-IN')}</p>
-        <h1 className="mt-2 text-2xl font-bold">{property.title}</h1>
-        <p className="mt-2 text-slate-600">{property.location.address}, {property.location.locality}, {property.location.city}</p>
-        <p className="mt-4 text-slate-700">{property.area.toLocaleString('en-IN')} sq ft · {property.bedrooms} BHK · {property.bathrooms} bathrooms</p>
-        <button onClick={() => setBookingOpen(true)} className="mt-5 rounded bg-brand-600 px-5 py-2 font-semibold text-white">Book a viewing</button>
+      <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_19rem]">
+        <section className="rounded-3xl border border-stone-200/80 bg-white p-6 shadow-sm sm:p-8">
+          <p className="text-3xl font-bold tracking-tight text-brand-700">₹{property.price.toLocaleString('en-IN')}</p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{property.title}</h1>
+          <p className="mt-3 text-slate-600">{property.location.address}, {property.location.locality}, {property.location.city}</p>
+          <div className="mt-6 grid grid-cols-3 gap-3 border-y border-stone-200 py-5 text-center">
+            <div>
+              <p className="text-lg font-semibold text-slate-900">{property.area.toLocaleString('en-IN')}</p>
+              <p className="mt-1 text-xs text-slate-500 sm:text-sm">sq ft</p>
+            </div>
+            <div>
+              <p className="text-lg font-semibold text-slate-900">{property.bedrooms} BHK</p>
+              <p className="mt-1 text-xs text-slate-500 sm:text-sm">Bedrooms</p>
+            </div>
+            <div>
+              <p className="text-lg font-semibold text-slate-900">{property.bathrooms}</p>
+              <p className="mt-1 text-xs text-slate-500 sm:text-sm">Bathrooms</p>
+            </div>
+          </div>
+          {property.description && <p className="mt-5 leading-7 text-slate-600">{property.description}</p>}
+        </section>
+        <aside className="h-fit rounded-3xl border border-stone-200/80 bg-white p-6 shadow-sm">
+          <p className="text-lg font-semibold text-slate-900">Interested in this home?</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">Schedule a private viewing and get more details about the property.</p>
+          <button onClick={() => setBookingOpen(true)} className="mt-5 w-full rounded-xl bg-brand-700 px-5 py-3 font-semibold text-white transition hover:bg-brand-600">
+            Book a viewing
+          </button>
+        </aside>
       </div>
 
       {bookingOpen && (
-        <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-900/50 p-4" role="dialog">
-          <form onSubmit={submitBooking} className="w-full max-w-lg space-y-3 rounded-xl bg-white p-5 shadow-xl">
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm" role="dialog">
+          <form onSubmit={submitBooking} className="w-full max-w-lg space-y-3 rounded-3xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold">Book a viewing</h2>
               <button type="button" onClick={() => setBookingOpen(false)} aria-label="Close" className="text-2xl">×</button>
@@ -108,6 +150,7 @@ export default function PropertyDetails() {
           </form>
         </div>
       )}
+      </div>
     </main>
   );
 }
