@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://YOUR_VERCEL_APP.vercel.app/sitemap.xml
+Sitemap: https://homeora-two.vercel.app/sitemap.xml

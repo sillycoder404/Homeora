@@ -19,10 +19,14 @@ app.set('trust proxy', 1);
 
 app.use(helmet());
 
+const parseOrigins = (value?: string): string[] =>
+  (value ?? '').split(',').map((url) => url.trim()).filter(Boolean);
+
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
-  ...(process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',').map((url) => url.trim()) : []),
+  ...parseOrigins(process.env.CLIENT_URL),
+  ...parseOrigins(process.env.ADDITIONAL_CLIENT_URLS),
 ];
 
 app.use(cors({
