@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { FormEvent } from 'react';
 import api from '../services/api';
 
@@ -14,14 +14,10 @@ interface RankedListing {
 
 export default function AiHub() {
   const [query, setQuery] = useState('');
-  const [firecrawlKey, setFirecrawlKey] = useState('');
+  const [firecrawlKey, setFirecrawlKey] = useState(() => localStorage.getItem('firecrawlKey') || '');
   const [results, setResults] = useState<RankedListing[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    setFirecrawlKey(localStorage.getItem('firecrawlKey') || '');
-  }, []);
 
   function saveKey(value: string) {
     setFirecrawlKey(value);

@@ -4,8 +4,9 @@ import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import type { ApiResponse } from '../services/api';
 import type { Property } from './Listings';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import PageMeta from '../components/PageMeta';
+import { getPropertyFallbackImage } from '../utils/propertyImages';
 
 export default function PropertyDetails() {
   const { id } = useParams();
@@ -14,6 +15,7 @@ export default function PropertyDetails() {
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingError, setBookingError] = useState('');
   const [bookingMessage, setBookingMessage] = useState('');
+  const [minimumBookingDate] = useState(() => new Date().toISOString().slice(0, 10));
   const { user } = useAuth();
   const [booking, setBooking] = useState({
     guestName: '', guestEmail: '', guestPhone: '', date: '', time: '10:00 AM', message: '',
@@ -60,10 +62,18 @@ export default function PropertyDetails() {
         image={property.images[0]?.url}
       />
       <div className="grid gap-3 md:grid-cols-2">
-        {property.images.map((image) => (
-          <img key={image.fileId} src={image.url} alt={property.title} className="h-72 w-full rounded-xl object-cover" />
+        {(property.images.length ? property.images : [{ url: getPropertyFallbackImage(property.location.city, property._id), fileId: 'fallback' }]).map((image) => (
+          <img
+            key={image.fileId}
+            src={image.url}
+            alt={property.title}
+            onError={(event) => {
+              event.currentTarget.onerror = null;
+              event.currentTarget.src = getPropertyFallbackImage(property.location.city);
+            }}
+            className="h-72 w-full rounded-xl object-cover"
+          />
         ))}
-        {property.images.length === 0 && <div className="flex h-72 items-center justify-center rounded-xl bg-slate-100 text-slate-400">No images</div>}
       </div>
       <div className="mt-6 rounded-xl bg-white p-6 shadow">
         <p className="text-3xl font-bold text-brand-700">₹{property.price.toLocaleString('en-IN')}</p>
@@ -89,7 +99,7 @@ export default function PropertyDetails() {
                 <input className="w-full rounded border px-3 py-2" placeholder="Phone" value={booking.guestPhone} onChange={(e) => setBooking({ ...booking, guestPhone: e.target.value })} required />
               </>
             )}
-            <input className="w-full rounded border px-3 py-2" type="date" min={new Date().toISOString().slice(0, 10)} value={booking.date} onChange={(e) => setBooking({ ...booking, date: e.target.value })} required />
+            <input className="w-full rounded border px-3 py-2" type="date" min={minimumBookingDate} value={booking.date} onChange={(e) => setBooking({ ...booking, date: e.target.value })} required />
             <select className="w-full rounded border px-3 py-2" value={booking.time} onChange={(e) => setBooking({ ...booking, time: e.target.value })}>
               {['10:00 AM', '11:30 AM', '2:00 PM', '4:30 PM', '6:00 PM'].map((time) => <option key={time}>{time}</option>)}
             </select>

@@ -10,6 +10,7 @@ export default function PropertyForm() {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [form, setForm] = useState({
@@ -32,10 +33,48 @@ export default function PropertyForm() {
 
   useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews]);
 
-  function chooseImages(files: FileList | null) {
-    const selected = Array.from(files || []).slice(0, 4);
-    setImages(selected);
-    setPreviews(selected.map((file) => URL.createObjectURL(file)));
+  async function compressImage(file: File): Promise<File> {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / bitmap.width, 1600 / bitmap.height);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('This browser could not process the selected image');
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+
+    let quality = 0.82;
+    let blob: Blob | null = null;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', quality));
+      if (blob && blob.size <= 900 * 1024) break;
+      quality -= 0.1;
+    }
+    if (!blob || blob.size > 1024 * 1024) {
+      throw new Error(`${file.name} could not be compressed small enough to upload`);
+    }
+    return new File([blob], `${file.name.replace(/\.[^.]+$/, '')}.webp`, { type: 'image/webp' });
+  }
+
+  async function chooseImages(files: FileList | null) {
+    const selected = Array.from(files || []);
+    setError('');
+    if (selected.length > 4) {
+      setError('Choose up to four images.');
+      return;
+    }
+    setCompressing(true);
+    try {
+      const compressed = await Promise.all(selected.map(compressImage));
+      previews.forEach((url) => URL.revokeObjectURL(url));
+      setImages(compressed);
+      setPreviews(compressed.map((file) => URL.createObjectURL(file)));
+    } catch (imageError) {
+      setError(imageError instanceof Error ? imageError.message : 'Unable to process selected images');
+    } finally {
+      setCompressing(false);
+    }
   }
 
   async function submit(event: FormEvent) {
@@ -107,16 +146,17 @@ export default function PropertyForm() {
         <label className="block text-sm font-medium">Description
           <textarea className="mt-1 min-h-28 w-full rounded border px-3 py-2" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
         </label>
-        <label className="block text-sm font-medium">Images (JPG, PNG or WebP, up to 4)
+        <label className="block text-sm font-medium">Images (JPG, PNG or WebP; up to 4, compressed for upload)
           <input className="mt-1 block w-full" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(e) => chooseImages(e.target.files)} />
         </label>
+        {compressing && <p className="text-sm text-slate-500">Preparing images...</p>}
         {previews.length > 0 && (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {previews.map((preview) => <img key={preview} src={preview} alt="Preview" className="h-32 w-full rounded object-cover" />)}
           </div>
         )}
-        <button disabled={loading} className="rounded bg-brand-600 px-5 py-2 font-semibold text-white">
-          {loading ? 'Saving...' : id ? 'Save changes' : 'Add property'}
+        <button disabled={loading || compressing} className="rounded bg-brand-600 px-5 py-2 font-semibold text-white">
+          {compressing ? 'Preparing images...' : loading ? 'Saving...' : id ? 'Save changes' : 'Add property'}
         </button>
       </form>
     </main>

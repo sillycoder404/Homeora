@@ -13,7 +13,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const AiHub = lazy(() => import('./pages/AiHub'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 import ProtectedRoute from './components/ProtectedRoute';
-import { useAuth } from './context/AuthContext';
+import { useAuth } from './context/useAuth';
 
 function Navigation() {
   const { user, logout } = useAuth();

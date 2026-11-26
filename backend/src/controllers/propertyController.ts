@@ -39,7 +39,18 @@ function parsePropertyBody(body: Record<string, unknown>): Record<string, unknow
 }
 
 async function uploadImages(files: Express.Multer.File[] = []): Promise<Array<{ url: string; fileId: string }>> {
-  const imagekit = getImageKit();
+  if (files.length === 0) return [];
+
+  let imagekit: ReturnType<typeof getImageKit>;
+  try {
+    imagekit = getImageKit();
+  } catch {
+    throw new ApiError(
+      503,
+      'Image uploads are not configured on the server. Add IMAGEKIT_PUBLIC_KEY, IMAGEKIT_PRIVATE_KEY and IMAGEKIT_URL_ENDPOINT to the backend environment.',
+    );
+  }
+
   const uploads = await Promise.all(
     files.map((file) =>
       imagekit.upload({
@@ -71,8 +82,18 @@ export async function getProperties(req: AuthRequest, res: Response, next: NextF
     if (maxArea) areaFilter.$lte = Number(maxArea);
     if (Object.keys(areaFilter).length) filter.area = areaFilter;
     if (location) {
-      const regex = new RegExp(String(location), 'i');
-      filter.$or = [{ 'location.city': regex }, { 'location.locality': regex }];
+      const locationText = String(location);
+      const regionCities: Record<string, string[]> = {
+        Gujarat: ['Ahmedabad', 'Surat', 'Vadodara'],
+      };
+      const region = regionCities[locationText];
+      const escaped = (region || [locationText]).map((city) =>
+        new RegExp(city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'),
+      );
+      filter.$or = escaped.flatMap((regex) => [
+        { 'location.city': regex },
+        { 'location.locality': regex },
+      ]);
     }
 
     const pageNumber = Math.max(1, Number(page));
@@ -155,8 +176,16 @@ export async function deleteProperty(req: AuthRequest, res: Response, next: Next
       throw new ApiError(403, 'You can only delete your own property');
     }
 
-    const imagekit = getImageKit();
-    await Promise.all(property.images.map((image) => imagekit.deleteFile(image.fileId)));
+    const uploadedImages = property.images.filter((image) => !image.fileId.startsWith('seed-'));
+    if (uploadedImages.length) {
+      let imagekit: ReturnType<typeof getImageKit>;
+      try {
+        imagekit = getImageKit();
+      } catch {
+        throw new ApiError(503, 'Image deletion is unavailable because ImageKit is not configured on the server.');
+      }
+      await Promise.all(uploadedImages.map((image) => imagekit.deleteFile(image.fileId)));
+    }
     await property.deleteOne();
     res.json({ success: true, message: 'Property deleted', data: null });
   } catch (error) {
