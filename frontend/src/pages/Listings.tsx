@@ -55,20 +55,38 @@ export default function Listings() {
     const next = new URLSearchParams(searchParams);
     if (value) next.set(key, value);
     else next.delete(key);
-    next.delete('page');
+    if (key !== 'page') next.delete('page');
     setSearchParams(next);
   }
 
+  function goToPage(page: number) {
+    setFilter('page', String(page));
+    document.getElementById('property-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   return (
-    <main className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
+    <main className="listings-backdrop min-h-screen">
+      <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 lg:py-12">
         <PageMeta title="Properties for Sale" description="Browse and filter houses, apartments, villas, plots and commercial properties across India." path="/properties" />
-        <div className="mb-8 max-w-2xl">
-          <p className="text-sm font-semibold uppercase tracking-widest text-brand-700">Discover properties</p>
-          <h1 className="mt-2 text-4xl font-bold text-slate-950 md:text-5xl">Find a place you'll love</h1>
-          <p className="mt-3 text-slate-600">Explore homes across India's most-loved cities and destinations.</p>
-        </div>
-        <div className="mb-8 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
+        <section className="listings-hero relative isolate overflow-hidden rounded-[2rem] px-6 py-9 text-white shadow-2xl shadow-slate-950/15 sm:px-10 sm:py-12">
+          <div className="relative z-10 max-w-3xl">
+            <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200/25 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200 backdrop-blur">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+              Discover properties
+            </p>
+            <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">Find a place<br className="hidden sm:block" /> you'll love</h1>
+            <p className="mt-4 max-w-xl text-base leading-7 text-slate-200 sm:text-lg">
+              Explore thoughtfully selected homes across India's most-loved cities and destinations.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3 text-sm">
+              <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-white/90 backdrop-blur">
+                {result ? `${result.pagination.total.toLocaleString('en-IN')} homes to explore` : 'Homes across India'}
+              </span>
+              <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-white/90 backdrop-blur">Buy · Compare · Discover</span>
+            </div>
+          </div>
+        </section>
+        <div className="relative z-10 -mt-5 mb-10 grid gap-3 rounded-3xl border border-white/80 bg-white/90 p-4 shadow-xl shadow-slate-900/10 backdrop-blur-md sm:grid-cols-2 md:p-5 lg:grid-cols-5">
           <select className="rounded-lg border border-slate-300 px-3 py-2.5" value={searchParams.get('location') || ''} onChange={(e) => setFilter('location', e.target.value)}>
             <option value="">All cities</option>
             {['Delhi','Mumbai','Pune','Jaipur','Gujarat','Ahmedabad','Lucknow','Kanpur','Udaipur','Manali','Shimla','Srinagar','Jammu','Gurugram','Bengaluru','Goa','Hyderabad','Mussoorie','Chennai','Kolkata','Indore','Bhopal','Nagpur','Kochi','Coimbatore','Chandigarh','Dehradun','Rishikesh','Varanasi','Agra','Amritsar','Jodhpur','Surat','Vadodara','Nashik','Noida'].map((city) => <option key={city}>{city}</option>)}
@@ -83,10 +101,17 @@ export default function Listings() {
         </div>
 
         {loading && <p className="py-10 text-center text-slate-500">Loading properties...</p>}
-        {!loading && error && <p className="rounded-xl bg-red-50 p-4 text-center text-red-700">{error}</p>}
-        {!loading && result?.properties.length === 0 && <p className="py-10 text-center text-slate-500">No properties found. Try changing your filters.</p>}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {result?.properties.map((property) => (
+        {!loading && error && <p role="alert" className="rounded-2xl border border-red-200 bg-white/90 p-5 text-center text-red-700 shadow-sm">{error}</p>}
+        {!loading && result?.properties.length === 0 && <p className="rounded-2xl border border-slate-200 bg-white/80 py-12 text-center text-slate-600 shadow-sm">No properties found. Try changing your filters.</p>}
+        {!loading && !error && result && result.properties.length > 0 && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 px-1 text-sm text-slate-600">
+            <p>Showing {result.properties.length} of {result.pagination.total.toLocaleString('en-IN')} properties</p>
+            <p>Page {result.pagination.page} of {result.pagination.pages}</p>
+          </div>
+        )}
+        {!loading && !error && result && (
+        <div id="property-results" className="scroll-mt-24 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {result.properties.map((property) => (
             <Link key={property._id} to={`/properties/${property._id}`} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl">
                 <img
                   src={property.images[0]?.url || getPropertyFallbackImage(property.location.city, property._id)}
@@ -106,12 +131,44 @@ export default function Listings() {
             </Link>
           ))}
         </div>
-        {result && result.pagination.pages > 1 && (
-          <div className="mt-8 flex justify-center gap-2">
+        )}
+        {!loading && !error && result && result.pagination.pages > 1 && (
+          <nav aria-label="Pagination" className="mt-10 flex flex-wrap justify-center gap-2">
+            <button
+              type="button"
+              aria-label="Go to previous page"
+              disabled={result.pagination.page <= 1}
+              onClick={() => goToPage(result.pagination.page - 1)}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-brand-600 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Previous
+            </button>
             {Array.from({ length: result.pagination.pages }, (_, index) => index + 1).map((page) => (
-              <button key={page} onClick={() => setFilter('page', String(page))} className={`rounded px-3 py-2 ${result.pagination.page === page ? 'bg-brand-600 text-white' : 'bg-white'}`}>{page}</button>
+              <button
+                key={page}
+                type="button"
+                aria-label={`Go to page ${page}`}
+                aria-current={result.pagination.page === page ? 'page' : undefined}
+                onClick={() => goToPage(page)}
+                className={`min-w-10 rounded-xl border px-3 py-2 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 ${
+                  result.pagination.page === page
+                    ? 'border-brand-700 bg-brand-700 text-white'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-brand-600 hover:text-brand-700'
+                }`}
+              >
+                {page}
+              </button>
             ))}
-          </div>
+            <button
+              type="button"
+              aria-label="Go to next page"
+              disabled={result.pagination.page >= result.pagination.pages}
+              onClick={() => goToPage(result.pagination.page + 1)}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-brand-600 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next
+            </button>
+          </nav>
         )}
       </div>
     </main>
