@@ -60,6 +60,9 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
 export async function forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     validateRequest(req);
+    const frontendUrl = process.env.FRONTEND_URL?.trim().replace(/\/+$/, '');
+    if (!frontendUrl) throw new ApiError(503, 'Password reset email is not configured');
+
     const user = await User.findOne({ email: req.body.email.toLowerCase().trim() });
     if (!user) throw new ApiError(404, 'No account exists with that email');
 
@@ -68,14 +71,22 @@ export async function forgotPassword(req: Request, res: Response, next: NextFunc
     user.resetPasswordExpire = new Date(Date.now() + 30 * 60 * 1000);
     await user.save({ validateBeforeSave: false });
 
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
-    await sendEmail(
-      user.email,
-      'Reset your RealEstate password',
-      `Use this link within 30 minutes to reset your password:\n\n${resetUrl}`,
-    );
+    const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
+    try {
+      await sendEmail(
+        user.email,
+        'Reset your Homeora password',
+        `Use this link within 30 minutes to reset your password:\n\n${resetUrl}`,
+      );
+    } catch (error) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+      console.error('Password reset email delivery failed:', error instanceof Error ? error.message : 'Unknown email error');
+      throw new ApiError(503, 'Password reset email could not be sent. Please try again later.');
+    }
 
-    res.json({ success: true, message: 'Password reset email sent', data: null });
+    res.json({ success: true, message: 'Password reset email sent. Check your inbox and spam folder.', data: null });
   } catch (error) {
     next(error);
   }
