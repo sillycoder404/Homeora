@@ -68,7 +68,16 @@ export default function Dashboard() {
           {appointments.map((appointment) => (
             <article key={appointment._id} className="flex flex-col justify-between gap-3 rounded-xl bg-white p-4 shadow sm:flex-row">
               <div>
-                <h2 className="font-bold">{appointment.property?.title || 'Property viewing'}</h2>
+                <h2 className="font-bold">
+                  {appointment.property ? (
+                    <Link
+                      to={`/properties/${appointment.property._id}`}
+                      className="text-brand-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                    >
+                      {appointment.property.title}
+                    </Link>
+                  ) : 'Property viewing'}
+                </h2>
                 <p className="text-sm text-slate-600">{new Date(appointment.date).toLocaleDateString('en-IN')} at {appointment.time}</p>
                 <span className={`mt-2 inline-block rounded-full px-2 py-1 text-xs ${
                   appointment.status === 'confirmed' ? 'bg-green-100 text-green-700'
