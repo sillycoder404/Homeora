@@ -68,7 +68,7 @@ async function createAppointment(
         };
 
     const appointment = await Appointment.create(data);
-    res.status(201).json({ success: true, message: 'Viewing booked successfully', data: appointment });
+    res.status(201).json({ success: true, message: 'Viewing request sent; awaiting admin confirmation', data: appointment });
   } catch (error) {
     next(error);
   }
@@ -88,6 +88,25 @@ export async function getMyAppointments(req: AuthRequest, res: Response, next: N
       .populate('property', 'title price location images')
       .sort('-date');
     res.json({ success: true, message: 'My appointments', data: appointments });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function confirmAppointment(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const appointment = await Appointment.findById(req.params.id);
+    if (!appointment) throw new ApiError(404, 'Appointment not found');
+    if (appointment.status === 'cancelled') {
+      throw new ApiError(409, 'Cancelled appointments cannot be confirmed');
+    }
+
+    if (appointment.status === 'pending') {
+      appointment.status = 'confirmed';
+      await appointment.save();
+    }
+
+    res.json({ success: true, message: 'Appointment confirmed', data: appointment });
   } catch (error) {
     next(error);
   }

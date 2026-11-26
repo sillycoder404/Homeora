@@ -49,7 +49,7 @@ export default function PropertyDetails() {
         time: booking.time,
         message: booking.message,
       });
-      setBookingMessage('Viewing booked successfully');
+      setBookingMessage('Viewing request sent. It will show as confirmed once an admin approves it.');
     } catch (err: any) {
       setBookingError(err.response?.data?.message || 'Unable to book viewing');
     }

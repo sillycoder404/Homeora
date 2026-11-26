@@ -74,7 +74,13 @@ export default function Dashboard() {
                   appointment.status === 'confirmed' ? 'bg-green-100 text-green-700'
                     : appointment.status === 'cancelled' ? 'bg-red-100 text-red-700'
                       : 'bg-amber-100 text-amber-700'
-                }`}>{appointment.status}</span>
+                }`}>
+                  {appointment.status === 'pending'
+                    ? 'Awaiting admin confirmation'
+                    : appointment.status === 'confirmed'
+                      ? 'Confirmed by admin'
+                      : 'Cancelled'}
+                </span>
               </div>
               {appointment.status !== 'cancelled' && (
                 <button onClick={() => cancelAppointment(appointment._id)} className="self-start rounded bg-red-50 px-3 py-2 text-sm text-red-700">Cancel</button>
