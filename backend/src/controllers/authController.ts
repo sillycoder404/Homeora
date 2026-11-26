@@ -30,7 +30,7 @@ export async function register(req: Request, res: Response, next: NextFunction):
     res.status(201).json({
       success: true,
       message: 'Account created successfully',
-      data: { token, user: { id: user.id, name: user.name, email: user.email, phone: user.phone } },
+      data: { token, user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role } },
     });
   } catch (error) {
     next(error);
@@ -50,7 +50,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
     res.json({
       success: true,
       message: 'Logged in successfully',
-      data: { token, user: { id: user.id, name: user.name, email: user.email, phone: user.phone } },
+      data: { token, user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role } },
     });
   } catch (error) {
     next(error);
@@ -107,6 +107,6 @@ export async function getMe(req: AuthRequest, res: Response): Promise<void> {
   res.json({
     success: true,
     message: 'Current user',
-    data: { id: req.user!._id.toString(), name: req.user!.name, email: req.user!.email, phone: req.user!.phone },
+    data: { id: req.user!._id.toString(), name: req.user!.name, email: req.user!.email, phone: req.user!.phone, role: req.user!.role },
   });
 }

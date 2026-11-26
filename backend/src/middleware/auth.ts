@@ -35,3 +35,11 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
     res.status(401).json({ success: false, message: 'Invalid or expired token', data: null });
   }
 }
+
+export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction): void {
+  if (!req.user || req.user.role !== 'admin') {
+    res.status(403).json({ success: false, message: 'Administrator access required', data: null });
+    return;
+  }
+  next();
+}

@@ -11,9 +11,9 @@ export default function PageMeta({ title, description, path = '/', image }: Page
   const siteUrl = window.location.origin;
   return (
     <Helmet>
-      <title>{title} | RealEstate India</title>
+      <title>{title} | Homeora</title>
       <meta name="description" content={description} />
-      <meta property="og:title" content={`${title} | RealEstate India`} />
+      <meta property="og:title" content={`${title} | Homeora`} />
       <meta property="og:description" content={description} />
       <meta property="og:type" content="website" />
       <meta property="og:url" content={`${siteUrl}${path}`} />

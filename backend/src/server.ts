@@ -11,8 +11,11 @@ import appointmentRoutes from './routes/appointmentRoutes';
 import { errorHandler, notFound } from './middleware/errorHandler';
 import { sanitizeInput } from './middleware/sanitizeInput';
 import aiHubRoutes from './routes/aiHubRoutes';
+import adminRoutes from './routes/adminRoutes';
 
 const app = express();
+
+app.set('trust proxy', 1);
 
 app.use(helmet());
 
@@ -38,6 +41,7 @@ const generalLimiter = rateLimit({
   limit: 100,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
+  keyGenerator: (req) => req.ip || 'unknown',
   message: { success: false, message: 'Too many requests; try again later', data: null },
 });
 
@@ -56,6 +60,7 @@ const authLimiter = rateLimit({
   limit: 20,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
+  keyGenerator: (req) => req.ip || 'unknown',
   message: { success: false, message: 'Too many authentication requests; try again later', data: null },
 });
 
@@ -67,6 +72,7 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/admin', adminRoutes);
 if (process.env.AI_HUB_ENABLED === 'true') {
   app.use('/api/ai-hub', aiHubRoutes);
 }
